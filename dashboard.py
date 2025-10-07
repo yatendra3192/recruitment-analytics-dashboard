@@ -4,14 +4,21 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import streamlit as st
 from datetime import datetime
+import os
 
 # Page configuration
 st.set_page_config(page_title="Recruitment Analytics Dashboard", layout="wide", page_icon="📊")
 
 # Load data
 @st.cache_data
-def load_data():
-    df = pd.read_excel('datafile.xlsx')
+def load_data(uploaded_file=None):
+    if uploaded_file is not None:
+        df = pd.read_excel(uploaded_file)
+    elif os.path.exists('datafile.xlsx'):
+        df = pd.read_excel('datafile.xlsx')
+    else:
+        return None
+
     # Clean date columns
     date_columns = ['Req Date\n (DD-MMM-YY)', 'Req Approved on (DD-MMM-YY)',
                     'Requisition Assigned', 'DOJ\n(DD-MMM-YY)']
@@ -20,10 +27,24 @@ def load_data():
             df[col] = pd.to_datetime(df[col], errors='coerce')
     return df
 
-df = load_data()
-
 # Dashboard Title
 st.title("📊 Recruitment Analytics Dashboard")
+
+# File upload section
+uploaded_file = st.file_uploader("Upload your recruitment data (Excel file)", type=['xlsx', 'xls'])
+
+# Load the data
+if uploaded_file is not None:
+    df = load_data(uploaded_file)
+else:
+    df = load_data()
+
+# Check if data is loaded
+if df is None:
+    st.warning("⚠️ Please upload an Excel file to view the dashboard.")
+    st.info("📋 Expected columns include: Requisition details, Status, Business Unit, Department, Location, TAT metrics, etc.")
+    st.stop()
+
 st.markdown("---")
 
 # Sidebar filters
